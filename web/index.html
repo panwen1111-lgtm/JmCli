@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>即梦 (Jimeng) Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script type="text/javascript" src="/eel.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Dashboard View (Hidden by default) -->
+        <div id="dashboard-view" class="view hidden">
+            <header class="glass-header">
+                <div class="logo">
+                    <span class="logo-icon">✨</span> 即梦 Studio
+                </div>
+                <div class="user-info">
+                    <div class="credit-badge" id="credit-display">
+                        <span class="credit-icon">💎</span> <span id="credit-value">加载中...</span>
+                    </div>
+                    <button id="logout-btn" class="btn btn-secondary btn-sm">退出</button>
+                </div>
+            </header>
+            
+            <div class="dashboard-body">
+                <!-- Sidebar Navigation -->
+                <aside class="sidebar glass-panel">
+                    <ul class="nav-menu">
+                        <li class="nav-item active" data-target="view-t2i">
+                            <span class="nav-icon">🖼️</span> 文生图
+                        </li>
+                        <li class="nav-item" data-target="view-t2v">
+                            <span class="nav-icon">🎬</span> 文生视频
+                        </li>
+                        <li class="nav-item" data-target="view-i2i">
+                            <span class="nav-icon">✨</span> 图生图
+                        </li>
+                        <li class="nav-item" data-target="view-i2v">
+                            <span class="nav-icon">🪄</span> 图生视频
+                        </li>
+                        <li class="nav-item" data-target="view-history">
+                            <span class="nav-icon">🕰️</span> 历史记录
+                        </li>
+                    </ul>
+                </aside>
+
+                <main class="dashboard-content">
+                    
+                    <!-- Text to Image Settings Panel -->
+                    <div id="view-t2i" class="tool-view active">
+                        <div class="welcome-section" id="welcome-header">
+                            <h1>创作引擎：文生图</h1>
+                            <p>输入你的灵感，让即梦为你呈现惊艳画面。</p>
+                        </div>
+                        
+                        <div class="settings-panel glass-panel">
+                            <div class="form-group">
+                                <label>画面灵感 (Prompt)</label>
+                                <textarea id="t2i-prompt" placeholder="例如：一只戴墨镜的橘猫在赛博朋克城市中散步..." rows="4"></textarea>
+                            </div>
+                            
+                            <div class="form-group row-group">
+                                <div class="half">
+                                    <label>生成比例</label>
+                                    <div class="radio-capsules" id="t2i-ratio">
+                                        <button class="capsule active" data-val="1:1">1:1</button>
+                                        <button class="capsule" data-val="16:9">16:9</button>
+                                        <button class="capsule" data-val="9:16">9:16</button>
+                                    </div>
+                                </div>
+                                <div class="half">
+                                    <label>清晰度</label>
+                                    <div class="radio-capsules" id="t2i-resolution">
+                                        <button class="capsule active" data-val="2k">2k</button>
+                                        <button class="capsule" data-val="4k">4k</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button id="btn-generate-t2i" class="btn btn-primary btn-large generate-btn">
+                                <span class="btn-text">开始生成图片</span>
+                                <span class="btn-icon">⚡</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Text to Video Settings Panel -->
+                    <div id="view-t2v" class="tool-view hidden">
+                        <div class="welcome-section">
+                            <h1>创作引擎：文生视频</h1>
+                            <p>赋予画面生命，将灵感化作震撼的动态影像。</p>
+                        </div>
+                        
+                        <div class="settings-panel glass-panel">
+                            <div class="form-group">
+                                <label>剧情灵感 (Prompt)</label>
+                                <textarea id="t2v-prompt" placeholder="例如：镜头慢慢推进，星际大兵从巨大的飞船中降落到荒芜的星球..." rows="3"></textarea>
+                            </div>
+                            
+                            <div class="form-group row-group">
+                                <div class="half">
+                                    <label>生成比例</label>
+                                    <div class="radio-capsules" id="t2v-ratio">
+                                        <button class="capsule active" data-val="16:9">16:9</button>
+                                        <button class="capsule" data-val="9:16">9:16</button>
+                                        <button class="capsule" data-val="1:1">1:1</button>
+                                    </div>
+                                </div>
+                                <div class="half">
+                                    <label>视频清晰度</label>
+                                    <div class="radio-capsules" id="t2v-resolution">
+                                        <button class="capsule active" data-val="720P">720P</button>
+                                        <button class="capsule" data-val="1080P">1080P</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>视频时长</label>
+                                <div class="radio-capsules" id="t2v-duration">
+                                    <button class="capsule active" data-val="5">5 秒</button>
+                                    <button class="capsule" data-val="10">10 秒</button>
+                                </div>
+                            </div>
+                            
+                            <button id="btn-generate-t2v" class="btn btn-primary btn-large generate-btn">
+                                <span class="btn-text">开始生成视频</span>
+                                <span class="btn-icon">⚡</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Image to Image Settings Panel -->
+                    <div id="view-i2i" class="tool-view hidden">
+                        <div class="welcome-section">
+                            <h1>创作引擎：图生图</h1>
+                            <p>以原始图像为锚点，运用 AI 风格化重绘无尽视界。</p>
+                        </div>
+                        
+                        <div class="settings-panel glass-panel">
+                            <div class="form-group row-group" style="align-items: center; justify-content: space-between;">
+                                <button id="btn-pick-i2i" class="btn btn-secondary file-picker-btn">选择参考首图</button>
+                                <span id="path-i2i" class="file-path truncate-text">未选择文件</span>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>重绘提示词 (Prompt)</label>
+                                <textarea id="i2i-prompt" placeholder="例如：将人物变为赛博朋克风格，保留大致构图..." rows="3"></textarea>
+                            </div>
+                            
+                            <div class="form-group row-group">
+                                <div class="half">
+                                    <label>生成比例</label>
+                                    <div class="radio-capsules" id="i2i-ratio">
+                                        <button class="capsule active" data-val="1:1">1:1</button>
+                                        <button class="capsule" data-val="16:9">16:9</button>
+                                        <button class="capsule" data-val="9:16">9:16</button>
+                                    </div>
+                                </div>
+                                <div class="half">
+                                    <label>清晰度</label>
+                                    <div class="radio-capsules" id="i2i-resolution">
+                                        <button class="capsule active" data-val="2k">2k</button>
+                                        <button class="capsule" data-val="4k">4k</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>重绘模型</label>
+                                <div class="radio-capsules" id="i2i-model">
+                                    <button class="capsule" data-val="1.4">v1.4</button>
+                                    <button class="capsule active" data-val="2.0">v2.0 (推荐)</button>
+                                </div>
+                            </div>
+                            
+                            <button id="btn-generate-i2i" class="btn btn-primary btn-large generate-btn">
+                                <span class="btn-text">开始重绘图像</span>
+                                <span class="btn-icon">✨</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Image to Video Settings Panel -->
+                    <div id="view-i2v" class="tool-view hidden">
+                        <div class="welcome-section">
+                            <h1>创作引擎：图生视频</h1>
+                            <p>只需一张静止的图片，就能让它流传在时间的长河中。</p>
+                        </div>
+                        
+                        <div class="settings-panel glass-panel">
+                            <div class="form-group row-group" style="align-items: center; justify-content: space-between;">
+                                <button id="btn-pick-i2v" class="btn btn-secondary file-picker-btn">选择视频首帧图</button>
+                                <span id="path-i2v" class="file-path truncate-text">未选择文件</span>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>运镜提示词 (Prompt)</label>
+                                <textarea id="i2v-prompt" placeholder="例如：画面中心的水流开始急速流淌，边缘虚化..." rows="3"></textarea>
+                            </div>
+                            
+                            <div class="form-group row-group">
+                                <div class="half">
+                                    <label>视频比例</label>
+                                    <div class="radio-capsules" id="i2v-ratio">
+                                        <button class="capsule active" data-val="16:9">16:9</button>
+                                        <button class="capsule" data-val="9:16">9:16</button>
+                                        <button class="capsule" data-val="1:1">1:1</button>
+                                    </div>
+                                </div>
+                                <div class="half">
+                                    <label>输出清晰度</label>
+                                    <div class="radio-capsules" id="i2v-resolution">
+                                        <button class="capsule active" data-val="720P">720P</button>
+                                        <button class="capsule" data-val="1080P">1080P</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>合成时长</label>
+                                <div class="radio-capsules" id="i2v-duration">
+                                    <button class="capsule active" data-val="5">5 秒</button>
+                                    <button class="capsule" data-val="10">10 秒</button>
+                                </div>
+                            </div>
+                            
+                            <button id="btn-generate-i2v" class="btn btn-primary btn-large generate-btn">
+                                <span class="btn-text">开始序列帧推演</span>
+                                <span class="btn-icon">🪄</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- History Tracking Panel -->
+                    <div id="view-history" class="tool-view hidden" style="max-width: 100%;">
+                        <div class="welcome-section" style="display:flex; justify-content: space-between; align-items: center; min-width: 700px;">
+                            <div>
+                                <h1>创世纪元：调度大盘</h1>
+                                <p>这里沉淀着您所有的集群调度历史，任何断线的排队任务都可以在这里一键追回并重新连接渲染通道。</p>
+                            </div>
+                            <button id="btn-refresh-history" class="btn btn-secondary">
+                                <span class="btn-icon">🔄</span> 更新本地看板
+                            </button>
+                        </div>
+                        
+                        <div class="history-grid" id="history-container">
+                            <!-- Cards will be injected here via JS -->
+                        </div>
+                    </div>
+                    
+                    <!-- Shared Preview Panel -->
+                    <div class="preview-panel glass-panel shared-preview">
+                        <div id="preview-placeholder" class="preview-placeholder">
+                            <div class="scanner-line hidden"></div>
+                            <span class="placeholder-text">期待你的灵感...</span>
+                        </div>
+                        <!-- Preview Holders -->
+                        <img id="preview-image" class="hidden result-media" src="" />
+                        <video id="preview-video" class="hidden result-media" src="" controls loop autoplay></video>
+                    </div>
+
+                </main>
+            </div>
+        </div>
+
+        <!-- Login View -->
+        <div id="login-view" class="view">
+            <div class="login-container glass-panel">
+                <div class="brand">
+                    <div class="brand-icon-wrapper">
+                        <span class="brand-icon">✨</span>
+                    </div>
+                    <h2>即梦 Studio</h2>
+                    <p class="subtitle">桌面端自动化创作引擎</p>
+                </div>
+
+                <div class="login-actions">
+                    <p class="login-hint">首次使用需要通过浏览器授权即梦账号</p>
+                    <button id="login-btn" class="btn btn-primary btn-large">
+                        <span class="btn-text">授权登录</span>
+                        <div class="spinner hidden" id="login-spinner"></div>
+                    </button>
+                </div>
+                
+                <div id="login-error" class="error-message hidden"></div>
+            </div>
+            <div class="ambient-orbs">
+                <div class="orb orb-1"></div>
+                <div class="orb orb-2"></div>
+                <div class="orb orb-3"></div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
