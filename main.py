@@ -27,6 +27,7 @@ def check_login_status():
     return app_state.get("logged_in", False)
 
 DREAMINA_EXE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dreamina.exe")
+LOCAL_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".dreamina_cli")
 
 def run_cli_command(command_args, mock_response=None, mock_success_text="成功"):
     """Helper to run CLI command with Mock fallback if dreamina isn't installed."""
@@ -88,7 +89,7 @@ import sqlite3
 
 @eel.expose
 def get_local_history():
-    db_path = os.path.expanduser(r"~\.dreamina_cli\tasks.db")
+    db_path = os.path.join(LOCAL_DATA_DIR, "tasks.db")
     if not os.path.exists(db_path):
         return []
         
@@ -154,8 +155,43 @@ def parse_cli_result(out, timestamp, mock_url, extension_regex, save_ext, submit
         if json_start != -1:
             parsed = json.loads(out[json_start:])
             
+            # Handle successful generation with result_json
+            if parsed.get("gen_status") == "success" and parsed.get("result_json"):
+                result = parsed["result_json"]
+                # Check for images
+                if result.get("images"):
+                    for img in result["images"]:
+                        if img.get("path") and os.path.exists(img["path"]):
+                            # Copy to web/results for serving
+                            results_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web", "results")
+                            os.makedirs(results_dir, exist_ok=True)
+                            ext = os.path.splitext(img["path"])[1] or f".{save_ext}"
+                            sid = parsed.get("submit_id") or submit_id or timestamp
+                            new_name = f"result_{sid}{ext}"
+                            dst = os.path.join(results_dir, new_name)
+                            if not os.path.exists(dst):
+                                shutil.copy(img["path"], dst)
+                            return {"success": True, "file_url": f"results/{new_name}"}
+                        elif img.get("url"):
+                            return {"success": True, "file_url": img["url"]}
+                # Check for videos
+                if result.get("videos"):
+                    for vid in result["videos"]:
+                        if vid.get("path") and os.path.exists(vid["path"]):
+                            results_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web", "results")
+                            os.makedirs(results_dir, exist_ok=True)
+                            ext = os.path.splitext(vid["path"])[1] or f".{save_ext}"
+                            sid = parsed.get("submit_id") or submit_id or timestamp
+                            new_name = f"result_{sid}{ext}"
+                            dst = os.path.join(results_dir, new_name)
+                            if not os.path.exists(dst):
+                                shutil.copy(vid["path"], dst)
+                            return {"success": True, "file_url": f"results/{new_name}"}
+                        elif vid.get("url"):
+                            return {"success": True, "file_url": vid.get("url", vid.get("h265_url", ""))}
+            
             # Detect queuing state to trigger UI polling
-            if parsed.get("gen_status") == "querying" or ("submit_id" in parsed and parsed.get("gen_status") != "fail"):
+            if parsed.get("gen_status") == "querying" or ("submit_id" in parsed and parsed.get("gen_status") not in ("fail", "success")):
                 return {
                     "success": True, 
                     "status": "querying", 
@@ -228,12 +264,12 @@ def generate_text2image(prompt, ratio, resolution):
     out = str(res.get("details", ""))
     parsed = parse_cli_result(out, timestamp, "https://images.unsplash.com/photo-1543852786-1cf6624b9987?ixlib=rb-4.0.3&auto=format&fit=crop&w=512&q=80", "png|jpg|jpeg|webp", "png")
     
-    if parsed["success"]:
+    if parsed["success"] and parsed.get("status") != "querying" and "file_url" in parsed:
         parsed["image_url"] = parsed.pop("file_url")
     return parsed
 
 @eel.expose
-def generate_text2video(prompt, ratio, resolution, duration):
+def generate_text2video(prompt, ratio, resolution, duration, model_version):
     timestamp = str(int(time.time()))
     res = run_cli_command([
         DREAMINA_EXE, "text2video", 
@@ -241,6 +277,7 @@ def generate_text2video(prompt, ratio, resolution, duration):
         f"--ratio={ratio}", 
         f"--video_resolution={resolution}", 
         f"--duration={duration}", 
+        f"--model_version={model_version}",
         "--poll=1"
     ], mock_response="Video Success", mock_success_text="模拟生成视频成功")
     
@@ -311,7 +348,7 @@ def query_result_task(submit_id, task_type):
     
     # Strategy 3: Check if the task is still querying (DB was updated by CLI)
     try:
-        db_path = os.path.expanduser(r"~\.dreamina_cli\tasks.db")
+        db_path = os.path.join(LOCAL_DATA_DIR, "tasks.db")
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         cursor.execute("SELECT gen_status FROM aigc_task WHERE submit_id=?", (submit_id,))
@@ -370,6 +407,74 @@ def generate_image2image(prompt, image_path, ratio, resolution, model_version):
     return parsed
 
 @eel.expose
+def select_video_file():
+    """Summons OS native file picker for video files"""
+    root = tk.Tk()
+    root.withdraw()
+    root.attributes('-topmost', True)
+    file_path = filedialog.askopenfilename(
+        title="选择参考视频 / 运镜视频",
+        filetypes=[("视频文件", "*.mp4 *.mov *.avi *.mkv"), ("所有文件", "*.*")]
+    )
+    root.destroy()
+    return file_path
+
+@eel.expose
+def select_audio_file():
+    """Summons OS native file picker for audio files"""
+    root = tk.Tk()
+    root.withdraw()
+    root.attributes('-topmost', True)
+    file_path = filedialog.askopenfilename(
+        title="选择背景音乐 / 音频文件",
+        filetypes=[("音频文件", "*.mp3 *.wav *.m4a *.aac"), ("所有文件", "*.*")]
+    )
+    root.destroy()
+    return file_path
+
+@eel.expose
+def generate_multimodal2video(prompt, image_path, video_path, audio_path, model_version, duration, ratio):
+    timestamp = str(int(time.time()))
+    
+    cmd = [
+        DREAMINA_EXE, "multimodal2video",
+        f"--prompt={prompt}",
+        f"--model_version={model_version}",
+        f"--duration={duration}",
+        f"--ratio={ratio}",
+        "--poll=1"
+    ]
+    
+    if image_path:
+        cmd.append(f"--image={image_path}")
+    if video_path:
+        cmd.append(f"--video={video_path}")
+    if audio_path:
+        cmd.append(f"--audio={audio_path}")
+        
+    res = run_cli_command(cmd, mock_response="Multimodal Success", mock_success_text="模拟全能参生成成功")
+    
+    if not res["success"]:
+        return {"success": False, "message": "全能参任务提交失败", "details": res["details"]}
+        
+    out = str(res.get("details", ""))
+    mock_url = "https://www.w3schools.com/html/mov_bbb.mp4" 
+    
+    if "【模拟模式】" in out:
+        return {"success": True, "video_url": mock_url}
+        
+    parsed = parse_cli_result(out, timestamp, mock_url, "mp4|avi|mov|mkv", "mp4")
+    
+    if parsed["success"] and parsed.get("status") != "querying":
+        # Check Strategy 1: file_url is from parse_cli_result or elsewhere
+        if "file_url" in parsed:
+            parsed["video_url"] = parsed.pop("file_url")
+        elif "media_url" in parsed:
+            parsed["video_url"] = parsed.pop("media_url")
+            
+    return parsed
+
+@eel.expose
 def generate_image2video(prompt, image_path, ratio, resolution, duration):
     timestamp = str(int(time.time()))
     res = run_cli_command([
@@ -400,12 +505,12 @@ def generate_image2video(prompt, image_path, ratio, resolution, duration):
 if __name__ == '__main__':
     load_state()
     try:
-        eel.start('index.html', size=(1000, 700), mode='edge', block=True)
+        eel.start('index.html', size=(1000, 700), port=8123, mode='edge', block=True)
     except EnvironmentError:
         try:
-            eel.start('index.html', size=(1000, 700), mode='chrome', block=True)
+            eel.start('index.html', size=(1000, 700), port=8123, mode='chrome', block=True)
         except EnvironmentError:
-            eel.start('index.html', size=(1000, 700), mode='default', block=False)
+            eel.start('index.html', size=(1000, 700), port=8123, mode='default', block=False)
             while True:
                 eel.sleep(1.0)
 

@@ -158,23 +158,78 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ============================================
     let cachedI2iPath = "";
     let cachedI2vPath = "";
+    let cachedM2vImgPath = "";
+    let cachedM2vVidPath = "";
+    let cachedM2vAudPath = "";
 
-    const bindPicker = (btnId, labelId, setter) => {
+    const bindPicker = (btnId, labelId, setter, pickerFunc) => {
         const btn = document.getElementById(btnId);
         if(btn) {
             btn.addEventListener('click', async () => {
-                const path = await eel.select_image_file()();
+                const path = await pickerFunc()();
                 if(path) {
-                    document.getElementById(labelId).innerText = "..." + path.slice(-25);
-                    document.getElementById(labelId).title = path;
+                    // Update label and cache
+                    const label = document.getElementById(labelId);
+                    label.innerText = (path.length > 25 ? "..." + path.slice(-22) : path);
+                    label.title = path;
                     setter(path);
                 }
             });
         }
     };
 
-    bindPicker('btn-pick-i2i', 'path-i2i', p => cachedI2iPath = p);
-    bindPicker('btn-pick-i2v', 'path-i2v', p => cachedI2vPath = p);
+    bindPicker('btn-pick-i2i', 'path-i2i', p => cachedI2iPath = p, eel.select_image_file);
+    bindPicker('btn-pick-i2v', 'path-i2v', p => cachedI2vPath = p, eel.select_image_file);
+    
+    // Multimodal pickers
+    bindPicker('btn-pick-m2v-img', 'path-m2v-img', p => cachedM2vImgPath = p, eel.select_image_file);
+    bindPicker('btn-pick-m2v-vid', 'path-m2v-vid', p => cachedM2vVidPath = p, eel.select_video_file);
+    bindPicker('btn-pick-m2v-aud', 'path-m2v-aud', p => cachedM2vAudPath = p, eel.select_audio_file);
+
+    // ============================================
+    // Multimodal to Video (全能参) Logic
+    // ============================================
+    const btnGenerateM2V = document.getElementById('btn-generate-m2v');
+    if(btnGenerateM2V) {
+        const promptM2V = document.getElementById('m2v-prompt');
+        btnGenerateM2V.addEventListener('click', async () => {
+            const promptInfo = promptM2V.value.trim();
+            if (!cachedM2vImgPath) return alert("请先选择主图素材！");
+            if (!promptInfo) return alert("请输入创意引导词！");
+
+            const ratio = getActiveVal('m2v-ratio');
+            const model = getActiveVal('m2v-model');
+            const duration = getActiveVal('m2v-duration');
+
+            btnGenerateM2V.disabled = true;
+            btnGenerateM2V.innerHTML = '<span class="spinner" style="position:relative; display:inline-block; border-top-color: var(--secondary-color);"></span> <span style="margin-left: 10px;">跨模态神经元融合中...</span>';
+            
+            previewImage.classList.add('hidden');
+            previewVideo.classList.add('hidden');
+            previewPlaceholder.classList.remove('hidden');
+            previewPlaceholder.classList.add('loading');
+            scannerLine.classList.remove('hidden');
+            placeholderText.innerText = "正在同步上传图片、视频及音频特征...\n全能参任务渲染可能需要 5-8 分钟...";
+
+            try {
+                const result = await eel.generate_multimodal2video(
+                    promptInfo, 
+                    cachedM2vImgPath, 
+                    cachedM2vVidPath, 
+                    cachedM2vAudPath, 
+                    model, 
+                    duration, 
+                    ratio
+                )();
+                await handlePollingResult(result, "video", btnGenerateM2V, "立即跨模态融合生成", promptInfo || "[全能参任务]");
+            } catch(e) {
+                alert("异常: " + e);
+                placeholderText.innerText = "连接异常";
+                btnGenerateM2V.disabled = false;
+                btnGenerateM2V.innerHTML = '<span class="btn-text">立即跨模态融合生成</span> <span class="btn-icon">🔮</span>';
+            }
+        });
+    }
 
     // ============================================
     // Text to Image (文生图) Logic
@@ -226,6 +281,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const ratio = getActiveVal('t2v-ratio');
             const res = getActiveVal('t2v-resolution');
             const duration = getActiveVal('t2v-duration');
+            const model = getActiveVal('t2v-model');
 
             btnGenerateT2V.disabled = true;
             btnGenerateT2V.innerHTML = '<span class="spinner" style="position:relative; display:inline-block; border-top-color: var(--secondary-color);"></span> <span style="margin-left: 10px;">序列帧渲染中...</span>';
@@ -238,7 +294,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             placeholderText.innerText = "正在向视频集群提交任务...";
 
             try {
-                const result = await eel.generate_text2video(promptInfo, ratio, res, duration)();
+                const result = await eel.generate_text2video(promptInfo, ratio, res, duration, model)();
                 await handlePollingResult(result, "video", btnGenerateT2V, "开始生成视频", promptInfo);
             } catch(e) {
                 alert("异常: " + e);

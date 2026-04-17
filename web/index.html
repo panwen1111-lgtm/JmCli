@@ -4,11 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>即梦 (Jimeng) Studio</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script type="text/javascript" src="/eel.js"></script>
 </head>
 <body>
+    <!-- Grain Overlay for Premium Texture -->
+    <div class="noise-overlay"></div>
     <div id="app">
         <!-- Dashboard View (Hidden by default) -->
         <div id="dashboard-view" class="view hidden">
@@ -39,6 +41,9 @@
                         </li>
                         <li class="nav-item" data-target="view-i2v">
                             <span class="nav-icon">🪄</span> 图生视频
+                        </li>
+                        <li class="nav-item" data-target="view-m2v">
+                            <span class="nav-icon">🎭</span> 全能参考
                         </li>
                         <li class="nav-item" data-target="view-history">
                             <span class="nav-icon">🕰️</span> 历史记录
@@ -117,11 +122,20 @@
                                 </div>
                             </div>
                             
-                            <div class="form-group">
-                                <label>视频时长</label>
-                                <div class="radio-capsules" id="t2v-duration">
-                                    <button class="capsule active" data-val="5">5 秒</button>
-                                    <button class="capsule" data-val="10">10 秒</button>
+                            <div class="form-group row-group">
+                                <div class="half">
+                                    <label>视频时长</label>
+                                    <div class="radio-capsules" id="t2v-duration">
+                                        <button class="capsule active" data-val="5">5 秒</button>
+                                        <button class="capsule" data-val="10">10 秒</button>
+                                    </div>
+                                </div>
+                                <div class="half">
+                                    <label>生成模型</label>
+                                    <div class="radio-capsules" id="t2v-model">
+                                        <button class="capsule active" data-val="seedance2.0">seedance2.0</button>
+                                        <button class="capsule" data-val="seedance1.0">Seedance 2.0 Fast</button>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -230,6 +244,71 @@
                             <button id="btn-generate-i2v" class="btn btn-primary btn-large generate-btn">
                                 <span class="btn-text">开始序列帧推演</span>
                                 <span class="btn-icon">🪄</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Multimodal Settings Panel (全能参考) -->
+                    <div id="view-m2v" class="tool-view hidden">
+                        <div class="welcome-section">
+                            <h1>混合引擎：全能参考</h1>
+                            <p>融合图片、运镜参考与音乐，一键生成电影级同步短视频。</p>
+                        </div>
+                        
+                        <div class="settings-panel glass-panel">
+                            <div class="form-group row-group" style="align-items: center; justify-content: space-between;">
+                                <div class="third">
+                                    <label>主图素材</label>
+                                    <button id="btn-pick-m2v-img" class="btn btn-secondary file-picker-btn">选择图片</button>
+                                    <div id="path-m2v-img" class="file-path truncate-text">未选择</div>
+                                </div>
+                                <div class="third">
+                                    <label>运镜参考(视频)</label>
+                                    <button id="btn-pick-m2v-vid" class="btn btn-secondary file-picker-btn">选择视频</button>
+                                    <div id="path-m2v-vid" class="file-path truncate-text">未选择</div>
+                                </div>
+                                <div class="third">
+                                    <label>背景音乐(可选)</label>
+                                    <button id="btn-pick-m2v-aud" class="btn btn-secondary file-picker-btn">选择音频</button>
+                                    <div id="path-m2v-aud" class="file-path truncate-text">未选择</div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>创意引导词 (Multimodal Prompt)</label>
+                                <textarea id="m2v-prompt" placeholder="例如：配合音乐节奏，通过运镜增强画面深度的同时，保持图片主角的动态神韵..." rows="2"></textarea>
+                            </div>
+                            
+                            <div class="form-group row-group">
+                                <div class="half">
+                                    <label>画布比例</label>
+                                    <div class="radio-capsules" id="m2v-ratio">
+                                        <button class="capsule active" data-val="16:9">16:9</button>
+                                        <button class="capsule" data-val="9:16">9:16</button>
+                                        <button class="capsule" data-val="1:1">1:1</button>
+                                    </div>
+                                </div>
+                                <div class="half">
+                                    <label>生成模型版本</label>
+                                    <div class="radio-capsules" id="m2v-model">
+                                        <button class="capsule" data-val="seedance1.0">Seedance 2.0 Fast</button>
+                                        <button class="capsule active" data-val="seedance2.0">seedance2.0</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>合成时长</label>
+                                <div class="radio-capsules" id="m2v-duration">
+                                    <button class="capsule" data-val="4">4 秒</button>
+                                    <button class="capsule active" data-val="8">8 秒</button>
+                                    <button class="capsule" data-val="10">10 秒</button>
+                                </div>
+                            </div>
+                            
+                            <button id="btn-generate-m2v" class="btn btn-primary btn-large generate-btn">
+                                <span class="btn-text">立即跨模态融合生成</span>
+                                <span class="btn-icon">🔮</span>
                             </button>
                         </div>
                     </div>
