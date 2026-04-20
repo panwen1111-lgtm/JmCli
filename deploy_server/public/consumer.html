@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dousha Network | 算力消费端</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap"></noscript>
+    <style>
+        :root {
+            --primary: #06b6d4;
+            --primary-glow: rgba(6, 182, 212, 0.4);
+            --bg: #030a1c;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --text: #ffffff;
+            --text-dim: rgba(255, 255, 255, 0.6);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 10% 10%, #082f49 0%, transparent 50%),
+                radial-gradient(circle at 90% 90%, #0c4a6e 0%, transparent 50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 {
+            font-size: 2.8rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #fff 0%, #06b6d4 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 1000px;
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 30px;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 28px;
+            padding: 30px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+        }
+
+        select, textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            color: #fff;
+            padding: 15px 20px;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        textarea {
+            height: 120px;
+            resize: none;
+            font-size: 1.1rem;
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 20px center;
+            background-size: 16px;
+        }
+
+        select:focus, textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(90deg, #0e7490, #06b6d4);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            transform: scale(1.02);
+            filter: brightness(1.2);
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .status-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .task-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.9rem;
+            position: relative;
+        }
+
+        .task-card.pending { border-left: 4px solid #94a3b8; }
+        .task-card.processing { border-left: 4px solid #06b6d4; animation: pulse 2s infinite; }
+        .task-card.completed { border-left: 4px solid #10b981; }
+        .task-card.failed { border-left: 4px solid #ef4444; }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
+        .task-card .prompt-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 8px;
+            color: var(--text-dim);
+        }
+
+        .task-card .status-tag {
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .gallery {
+            grid-column: 1 / span 2;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .gallery-item {
+            aspect-ratio: 1;
+            background: #000;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s;
+        }
+
+        .gallery-item:hover img {
+            transform: scale(1.1);
+        }
+
+        .gallery-item .overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 15px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .gallery-item:hover .overlay { opacity: 1; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>创作中心 | Consumer</h1>
+        <p>全球算力，触手可及</p>
+    </div>
+
+    <div class="main-container">
+        <div class="glass-card">
+            <!-- 账号选择 -->
+            <div class="input-group">
+                <label>选择算力供应商</label>
+                <select id="providerSelect">
+                    <option value="">随机匹配 (自动选择最快节点)</option>
+                    <!-- 动态加载 -->
+                </select>
+            </div>
+
+            <!-- 提示词输入 -->
+            <div class="input-group">
+                <label>描述您的创意</label>
+                <textarea id="promptInput" placeholder="请输入您的想象力... (例如：一只宇航猫在霓虹街道漫步)"></textarea>
+            </div>
+
+            <button class="submit-btn" onclick="submitTask()">立即启动创作</button>
+
+            <div class="gallery" id="gallery">
+                <!-- 结果展示 -->
+            </div>
+        </div>
+
+        <div class="status-sidebar" id="taskStack">
+            <!-- 实时任务栈 -->
+        </div>
+    </div>
+
+    <script>
+        // 加载供应商列表
+        async function loadProviders() {
+            try {
+                const res = await fetch('/api/accounts');
+                const providers = await res.json();
+                const select = document.getElementById('providerSelect');
+                
+                // 保留第一项，清空后续内容
+                const defaultOption = select.options[0];
+                select.innerHTML = '';
+                select.appendChild(defaultOption);
+
+                providers.forEach(p => {
+                    if(p.status === 'active') {
+                        const opt = document.createElement('option');
+                        opt.value = p.id;
+                        opt.textContent = `${p.user_name} (剩余积分: ${p.points})`;
+                        select.appendChild(opt);
+                    }
+                });
+            } catch (e) {
+                console.error('加载供应商失败', e);
+            }
+        }
+
+        async function submitTask() {
+            const prompt = document.getElementById('promptInput').value;
+            const accountId = document.getElementById('providerSelect').value;
+            
+            if(!prompt) return;
+
+            const res = await fetch('/api/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    prompt, 
+                    accountId: accountId ? parseInt(accountId) : null 
+                })
+            });
+            
+            if(res.ok) {
+                document.getElementById('promptInput').value = '';
+                refresh();
+            }
+        }
+
+        async function refresh() {
+            const res = await fetch('/api/tasks');
+            const tasks = await res.json();
+            
+            const stack = document.getElementById('taskStack');
+            stack.innerHTML = tasks.filter(t => t.status !== 'completed').map(t => `
+                <div class="task-card ${t.status}">
+                    <div class="prompt-text">${t.prompt}</div>
+                    <div class="status-tag">
+                        <span>#${t.id}</span>
+                        <span>${t.status.toUpperCase()}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = tasks.filter(t => t.status === 'completed' && t.result_url).map(t => `
+                <div class="gallery-item">
+                    <img src="${t.result_url.startsWith('http') ? t.result_url : (t.result_url.startsWith('/') ? t.result_url : '../' + t.result_url) }" alt="result">
+                    <div class="overlay">${t.prompt}</div>
+                </div>
+            `).join('');
+        }
+
+        loadProviders();
+        refresh();
+        setInterval(refresh, 3000);
+    </script>
+</body>
+</html>

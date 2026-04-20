@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dousha Network | 供应端</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-glow: rgba(16, 185, 129, 0.4);
+            --bg: #000;
+            --card-bg: #111;
+            --text: #fff;
+            --text-dim: #999;
+            --accent: #fbbf24;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .container { width: 100%; max-width: 600px; padding: 20px; }
+        .glass-card {
+            background: var(--card-bg); border: 1px solid #222; border-radius: 20px;
+            padding: 30px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9);
+        }
+        h1 { font-size: 1.8rem; color: var(--primary); text-align: center; margin-bottom: 30px; }
+        label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: var(--text-dim); }
+        input, textarea {
+            width: 100%; padding: 14px; background: #000; border: 1px solid #333;
+            border-radius: 10px; color: #fff; font-family: inherit; margin-bottom: 20px; outline: none;
+        }
+        .main-btn {
+            width: 100%; padding: 16px; background: var(--primary); color: #000;
+            border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer;
+            margin-bottom: 30px; transition: 0.2s;
+        }
+        .main-btn:disabled { opacity: 0.3; cursor: wait; }
+        
+        .steps { display: none; border-top: 1px solid #222; padding-top: 25px; }
+        .steps.active { display: block; }
+        
+        .step-row { display: flex; gap: 10px; margin-bottom: 25px; }
+        .btn-link {
+            flex: 1; padding: 12px; text-align: center; background: #222; color: #fff;
+            text-decoration: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600;
+        }
+        .btn-link:hover { background: #333; }
+        .btn-link.highlight { background: var(--accent); color: #000; }
+
+        .submit-btn {
+            width: 100%; padding: 12px; background: #fff; color: #000; border: none;
+            border-radius: 8px; font-weight: 700; cursor: pointer;
+        }
+        
+        .toast {
+            position: fixed; bottom: -50px; left: 50%; translate: -50% 0;
+            background: var(--primary); color: #000; padding: 12px 25px;
+            border-radius: 50px; font-weight: 700; transition: 0.4s;
+        }
+        .toast.show { bottom: 30px; }
+
+        .account-list { margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+        .account-item { background: #111; border: 1px solid #222; padding: 10px; border-radius: 8px; font-size: 0.8rem; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="glass-card">
+            <h1>算力供应端 | Provider</h1>
+            <label>算力节点名称</label>
+            <input type="text" id="userName" placeholder="起个名字，方便识别">
+            
+            <button class="main-btn" id="startBtn" onclick="startProcess()">
+                开启手动托管流程
+            </button>
+
+            <div id="stepsArea" class="steps">
+                <div class="step-row">
+                    <a href="#" id="link1" class="btn-link" target="_blank">1. 点我扫码</a>
+                    <a href="#" id="link2" class="btn-link highlight" target="_blank">2. 扫完点我拿 JSON</a>
+                </div>
+                
+                <label>3. 粘贴 JSON 乱码到下方</label>
+                <textarea id="manualJson" rows="4" placeholder='{"ret":0, ...}'></textarea>
+                
+                <button class="submit-btn" onclick="submitSession()">完成手动托管</button>
+            </div>
+        </div>
+        <div class="account-list" id="accountList"></div>
+    </div>
+    <div id="toast" class="toast">操作成功</div>
+
+    <script>
+        let timer = null;
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg; t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        async function startProcess() {
+            const name = document.getElementById('userName').value;
+            if(!name) return showToast('❌ 请填写节点名称');
+            
+            const btn = document.getElementById('startBtn');
+            btn.innerText = '正在初始化隧道...';
+            btn.disabled = true;
+
+            const res = await fetch('/api/login/start');
+            if(res.ok) {
+                document.getElementById('stepsArea').classList.add('active');
+                timer = setInterval(async () => {
+                    const s = await (await fetch('/api/login/status')).json();
+                    if(s.urlObj) {
+                        document.getElementById('link1').href = s.urlObj.step1;
+                        document.getElementById('link2').href = s.urlObj.step2;
+                        btn.innerText = '隧道已开启，请按步骤操作';
+                    }
+                }, 1000);
+            }
+        }
+
+        async function submitSession() {
+            const json = document.getElementById('manualJson').value.trim();
+            if(!json.startsWith('{')) return showToast('❌ JSON 格式不正确');
+            
+            const name = document.getElementById('userName').value;
+            const res = await fetch('/api/accounts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userName: name, loginJson: json })
+            });
+            if(res.ok) {
+                showToast('✅ 节点上线成功！');
+                setTimeout(() => location.reload(), 2000);
+            }
+        }
+
+        async function fetchAccounts() {
+            const accs = await (await fetch('/api/accounts')).json();
+            document.getElementById('accountList').innerHTML = accs.map(a => `<div class="account-item">${a.user_name}</div>`).join('');
+        }
+        fetchAccounts();
+    </script>
+</body>
+</html>

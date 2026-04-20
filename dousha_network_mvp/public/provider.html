@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dousha Network | 算力供应端</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap"></noscript>
+    <style>
+        :root {
+            --primary: #8a2be2;
+            --primary-glow: rgba(138, 43, 226, 0.4);
+            --bg: #0a0514;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --text: #ffffff;
+            --text-dim: rgba(255, 255, 255, 0.6);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 10%, #200a3d 0%, transparent 40%),
+                radial-gradient(circle at 90% 90%, #150626 0%, transparent 40%);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            padding: 40px;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #fff 0%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: var(--text-dim);
+            font-size: 1rem;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            margin-bottom: 30px;
+            transition: transform 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(138, 43, 226, 0.3);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 14px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #fff;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            flex: 1;
+            padding: 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+
+        .btn-primary:active { transform: scale(0.98); }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-secondary {
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #9d4edd;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--primary-glow);
+        }
+
+        /* 登录引导模块 */
+        .login-guide {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(138, 43, 226, 0.1);
+            border-radius: 16px;
+            border: 1px dashed var(--primary);
+            text-align: center;
+        }
+
+        .login-guide.active { display: block; }
+
+        .login-guide .step {
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+
+        .login-link {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 10px 20px;
+            background: #fff;
+            color: var(--primary);
+            text-decoration: none;
+            border-radius: 100px;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transition: 0.3s;
+        }
+
+        .login-link:hover { transform: scale(1.05); }
+
+        .account-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .account-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .account-item .status {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 10px #10b981;
+        }
+
+        .account-item h3 {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            color: #d8b4fe;
+        }
+
+        .account-item .meta {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin-bottom: 4px;
+        }
+
+        .account-item .badge {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 4px 10px;
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 6px;
+            font-size: 0.8rem;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(138, 43, 226, 0.95);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 100px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            transition: bottom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+        }
+
+        .toast.show {
+            bottom: 40px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container" id="app">
+        <div class="header">
+            <h1>算力供应端 | Provider</h1>
+            <p>托管您的即梦账号，释放闲置积分价值</p>
+        </div>
+
+        <div class="glass-card">
+            <div class="input-group">
+                <label>供应商名称 (请起一个好听的名字)</label>
+                <input type="text" id="userName" placeholder="例如：豆沙-01号机">
+            </div>
+            <div class="input-group">
+                <div class="label-row">
+                    <label>CLI Session JSON</label>
+                    <button class="btn-secondary" id="autoLoginBtn" onclick="startAutoLogin()">一站式自动登录获取</button>
+                </div>
+                <textarea id="loginJson" rows="5" placeholder="此处将自动填入登录凭证..."></textarea>
+            </div>
+
+            <!-- 登录引导 -->
+            <div id="loginGuide" class="login-guide">
+                <div id="guideLoading">
+                    <div class="spinner"></div> 正在同步本地登录态...
+                </div>
+                <div id="guideUrl" style="display: none;">
+                    <div class="step">第一步：点击下方按钮在新窗口中登录即梦账号</div>
+                    <a href="#" id="loginLink" class="login-link" target="_blank">点击前往即梦登录</a>
+                </div>
+                <div id="guideSuccess" style="display: none; color: #10b981; font-weight: 600;">
+                    ✓ 获取成功！JSON 已回填。
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn-primary" id="submitBtn" onclick="submitSession()">立即执行托管</button>
+            </div>
+        </div>
+
+        <div style="margin-top: 50px; font-size: 1.2rem; font-weight: 600; color: var(--text-dim);">已托管账号列表</div>
+        <div class="account-list" id="accountList">
+            <!-- 账号卡片 -->
+        </div>
+    </div>
+
+    <div class="toast" id="toast">操作成功</div>
+
+    <script>
+        let pollTimer = null;
+
+        async function fetchAccounts() {
+            try {
+                const res = await fetch('/api/accounts');
+                const accounts = await res.json();
+                const list = document.getElementById('accountList');
+                if (accounts.length === 0) {
+                    list.innerHTML = '<div style="grid-column: 1/-1; text-align: center; opacity: 0.5; padding: 40px;">暂无托管账号</div>';
+                    return;
+                }
+                list.innerHTML = accounts.map(acc => `
+                    <div class="account-item">
+                        <div class="status"></div>
+                        <h3>${acc.user_name}</h3>
+                        <div class="meta">托管时间：${new Date(acc.created_at).toLocaleString()}</div>
+                        <div class="meta">剩余积分：${acc.points}</div>
+                        <div class="badge">在线托管中 (Active)</div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error('获取列表失败', e);
+            }
+        }
+
+        async function startAutoLogin() {
+            const guide = document.getElementById('loginGuide');
+            const btn = document.getElementById('autoLoginBtn');
+            const loading = document.getElementById('guideLoading');
+            const urlArea = document.getElementById('guideUrl');
+            const link = document.getElementById('loginLink');
+            const successMsg = document.getElementById('guideSuccess');
+
+            guide.className = 'login-guide active';
+            loading.style.display = 'block';
+            urlArea.style.display = 'none';
+            successMsg.style.display = 'none';
+            btn.disabled = true;
+
+            try {
+                await fetch('/api/login/start');
+                
+                if(pollTimer) clearInterval(pollTimer);
+                pollTimer = setInterval(async () => {
+                    const res = await fetch('/api/login/status');
+                    const state = await res.json();
+
+                    if (state.url && urlArea.style.display === 'none') {
+                        loading.style.display = 'none';
+                        urlArea.style.display = 'block';
+                        link.href = state.url;
+                    }
+
+                    if (state.status === 'success' && state.result) {
+                        clearInterval(pollTimer);
+                        document.getElementById('loginJson').value = state.result;
+                        urlArea.style.display = 'none';
+                        loading.style.display = 'none';
+                        successMsg.style.display = 'block';
+                        btn.disabled = false;
+                        showToast('✓ 凭证抓取成功！');
+                    }
+
+                    if (state.status === 'error') {
+                        clearInterval(pollTimer);
+                        alert('启动异常：' + state.error);
+                        guide.className = 'login-guide';
+                        btn.disabled = false;
+                    }
+                }, 1000);
+            } catch (e) {
+                alert('连接服务器失败');
+                btn.disabled = false;
+            }
+        }
+
+        async function submitSession() {
+            const userName = document.getElementById('userName').value;
+            const loginJson = document.getElementById('loginJson').value;
+            const submitBtn = document.getElementById('submitBtn');
+
+            if(!userName || !loginJson) {
+                return showToast('❌ 请先填写名称和 Session');
+            }
+
+            // 视觉反馈
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<div class="spinner"></div> 正在同步至云端...';
+
+            try {
+                const res = await fetch('/api/accounts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userName, loginJson })
+                });
+
+                if (res.ok) {
+                    showToast('🎉 账号托管成功！');
+                    document.getElementById('loginJson').value = '';
+                    document.getElementById('guideSuccess').style.display = 'none';
+                    document.getElementById('loginGuide').className = 'login-guide';
+                    fetchAccounts();
+                } else {
+                    const error = await res.json();
+                    alert('托管失败：' + (error.error || '未知错误'));
+                }
+            } catch (e) {
+                alert('网络请求失败，请检查 Server 是否开启');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = '立即执行托管';
+            }
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3500);
+        }
+
+        fetchAccounts();
+        setInterval(fetchAccounts, 5000);
+    </script>
+</body>
+</html>

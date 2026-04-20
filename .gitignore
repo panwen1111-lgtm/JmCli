@@ -36,3 +36,9 @@ Desktop.ini
 .idea/
 *.swp
 *.swo
+
+# Dousha Network Matrix (Cloud-sensitive data)
+deploy_server/dousha_network.json
+deploy_server/public/outputs/
+nodes/
+dousha_network_mvp/dousha_network.db

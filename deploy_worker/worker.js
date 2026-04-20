@@ -6,8 +6,8 @@ const fs = require('fs');
 // 生成一个随机 Worker ID 用于日志区分多人并发
 const WORKER_ID = 'Worker-' + Math.random().toString(36).substring(2, 6).toUpperCase();
 
-// CLI 路径
-const EXE_PATH = path.resolve(__dirname, '..', 'dreamina.exe');
+// CLI 路径（强制要求在同级目录）
+const EXE_PATH = path.resolve(__dirname, 'dreamina.exe');
 const cli = new CliAdapter(EXE_PATH);
 
 // 服务器地址（支持通过参数传入，例如：node worker.js http://x.x.x.x:3000）

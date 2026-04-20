@@ -1,0 +1,9 @@
+{
+  "name": "dousha-network-server",
+  "version": "1.0.0",
+  "description": "Dousha Network Central Hub (Pure JS Edition)",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dousha Admin | 供应商管理</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap">
+    <style>
+        :root {
+            --primary: #f59e0b;
+            --bg: #0c0a09;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --text: #e7e5e4;
+            --danger: #ef4444;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 50px 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+        .header h1 { font-size: 2rem; border-left: 5px solid var(--primary); padding-left: 15px; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card-bg);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        th, td { padding: 18px 25px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        th { background: rgba(255,255,255,0.02); color: var(--primary); font-weight: 600; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; }
+        tr:hover { background: rgba(255,255,255,0.03); }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: 0.3s;
+            margin-right: 8px;
+        }
+        .btn-view { background: rgba(245, 158, 11, 0.1); color: var(--primary); border: 1px solid var(--primary); }
+        .btn-view:hover { background: var(--primary); color: #000; }
+        .btn-del { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid var(--danger); }
+        .btn-del:hover { background: var(--danger); color: #fff; }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: #1c1917;
+            width: 80%;
+            max-width: 800px;
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+        }
+        .modal-header { font-size: 1.2rem; margin-bottom: 20px; color: var(--primary); }
+        pre {
+            background: #000;
+            padding: 20px;
+            border-radius: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 0.85rem;
+            color: #10b981;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .close-btn {
+            position: absolute;
+            top: 20px; right: 20px;
+            color: #fff; font-size: 1.5rem; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>供应商全量管理后台</h1>
+            <div style="font-size: 0.9rem; color: #78716c;">Matrix Edition v2.0</div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>供应商名称</th>
+                    <th>Node 指纹特征</th>
+                    <th>托管时间</th>
+                    <th>操作项</th>
+                </tr>
+            </thead>
+            <tbody id="accountTable"></tbody>
+        </table>
+    </div>
+
+    <div id="viewModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">×</span>
+            <div class="modal-header">完整登录凭证审计 (Session JSON)</div>
+            <pre id="jsonContent"></pre>
+        </div>
+    </div>
+
+    <script>
+        async function loadAccounts() {
+            try {
+                const res = await fetch('/api/accounts/raw');
+                const accounts = await res.json();
+                const tbody = document.getElementById('accountTable');
+                
+                tbody.innerHTML = accounts.map(a => {
+                    const js = a.login_json || '';
+                    const preview = js ? `${js.substring(0, 10)}...${js.substring(js.length-10)}` : '空';
+                    return `
+                        <tr>
+                            <td>${a.id}</td>
+                            <td style="font-weight: 600;">${a.user_name}</td>
+                            <td style="font-family: monospace; color: #78716c;">${preview}</td>
+                            <td>${new Date(a.created_at).toLocaleString()}</td>
+                            <td>
+                                <button class="btn btn-view" onclick="viewJson('${btoa(unescape(encodeURIComponent(js)))}')">查阅 JSON</button>
+                                <button class="btn btn-del" onclick="deleteAcc(${a.id})">极速删除</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (e) { console.error(e); }
+        }
+
+        async function deleteAcc(id) {
+            if(!confirm('确定要抹除该供应商吗？此操作不可逆。')) return;
+            const res = await fetch(`/api/accounts/${id}`, { method: 'DELETE' });
+            if(res.ok) loadAccounts();
+        }
+
+        function viewJson(base64) {
+            const json = decodeURIComponent(escape(atob(base64)));
+            document.getElementById('jsonContent').innerText = JSON.stringify(JSON.parse(json), null, 4);
+            document.getElementById('viewModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('viewModal').style.display = 'none';
+        }
+
+        loadAccounts();
+    </script>
+</body>
+</html>
